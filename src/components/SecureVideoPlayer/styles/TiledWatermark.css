@@ -1,0 +1,16 @@
+/* =========================================
+   Tiled Watermark Styles
+   ========================================= */
+
+.watermark-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 20;
+    opacity: 0.15;
+    background-image: repeating-linear-gradient(-45deg,
+            rgba(255, 255, 255, 0.03),
+            rgba(255, 255, 255, 0.03) 2px,
+            transparent 2px,
+            transparent 40px);
+}

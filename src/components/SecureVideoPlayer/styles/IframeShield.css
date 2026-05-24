@@ -1,0 +1,12 @@
+/* =========================================
+   Iframe Shield Styles
+   ========================================= */
+
+.iframe-shield {
+    position: absolute;
+    inset: 0;
+    z-index: 45;
+    background: transparent;
+    pointer-events: none;
+    /* Let events pass through to interaction-overlay */
+}

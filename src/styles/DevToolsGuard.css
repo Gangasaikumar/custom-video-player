@@ -1,0 +1,19 @@
+/* =========================================
+   DevTools Guard Styles
+   ========================================= */
+
+.devtools-guard-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(255, 0, 0, 0.95);
+    color: white;
+    padding: 14px;
+    text-align: center;
+    z-index: 10000;
+    font-weight: bold;
+    font-size: 14px;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}

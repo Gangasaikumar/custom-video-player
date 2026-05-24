@@ -1,0 +1,12 @@
+/* =========================================
+   Moving Watermark Styles
+   ========================================= */
+
+.moving-watermark {
+    position: absolute;
+    color: rgba(255, 255, 255, 0.35);
+    pointer-events: none;
+    z-index: 30;
+    transition: top 2s ease, left 2s ease;
+    /* smooth movement */
+}

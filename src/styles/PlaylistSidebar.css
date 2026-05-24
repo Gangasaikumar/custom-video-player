@@ -1,0 +1,142 @@
+/* =========================================
+   Playlist Sidebar Styles
+   ========================================= */
+.playlist-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.playlist-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding: 0 10px;
+}
+
+.playlist-header-title {
+    font-size: 16px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #ffffff;
+    margin: 0;
+}
+
+.playlist-header-accent {
+    width: 40px;
+    height: 2px;
+    background: var(--accent-purple);
+    border-radius: 100px;
+}
+
+.playlist-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.playlist-item {
+    display: flex;
+    gap: 16px;
+    cursor: pointer;
+    padding: 12px;
+    border-radius: 16px;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.playlist-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.playlist-item.active {
+    background: rgba(164, 53, 240, 0.1);
+    border-color: rgba(164, 53, 240, 0.2);
+}
+
+.playlist-thumbnail-container {
+    position: relative;
+    width: 160px;
+    height: 90px;
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    background: #000;
+}
+
+.playlist-thumbnail-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+}
+
+.playlist-item.active .playlist-thumbnail-img {
+    opacity: 0.6;
+}
+
+.playlist-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(164, 53, 240, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.playlist-duration-badge {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.playlist-meta {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.playlist-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+    line-height: 1.3;
+    color: #fff;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.playlist-item.active .playlist-title {
+    font-weight: 800;
+    color: var(--accent-purple);
+}
+
+.playlist-channel {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+}
+
+.playlist-stats {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}

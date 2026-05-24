@@ -29,8 +29,15 @@ const getYouTubeId = (url: string) => {
   return null;
 };
 
-/** Public entry point — wraps itself in an Error Boundary automatically. */
+/**
+ * Public entry point.
+ * useSecurity() is called HERE — outside the Error Boundary — so right-click
+ * and DevTools key blocking remain active even if the inner player crashes.
+ */
 export function SecureVideoPlayer(props: SecureVideoPlayerProps) {
+  // Must stay outside PlayerErrorBoundary so cleanup never fires on a player crash
+  useSecurity();
+
   return (
     <PlayerErrorBoundary>
       <SecureVideoPlayerInner {...props} />
@@ -40,9 +47,6 @@ export function SecureVideoPlayer(props: SecureVideoPlayerProps) {
 
 function SecureVideoPlayerInner(props: SecureVideoPlayerProps) {
   const youtubeId = getYouTubeId(props.src);
-
-  // Block right-click + DevTools keyboard shortcuts
-  useSecurity();
 
   return youtubeId ? (
     <YoutubeSpecificPlayer videoId={youtubeId} {...props} />

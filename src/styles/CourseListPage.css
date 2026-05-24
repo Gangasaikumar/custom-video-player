@@ -346,6 +346,167 @@
 }
 
 /* =========================================
+   Search + Filter Bar
+   ========================================= */
+
+.course-search-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 2;
+}
+
+.course-search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.course-search-icon {
+    position: absolute;
+    left: 16px;
+    color: rgba(255, 255, 255, 0.35);
+    pointer-events: none;
+    flex-shrink: 0;
+}
+
+.course-search-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    padding: 13px 44px 13px 44px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.course-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.course-search-input:focus {
+    border-color: rgba(164, 53, 240, 0.6);
+    background: rgba(164, 53, 240, 0.06);
+}
+
+.course-search-clear {
+    position: absolute;
+    right: 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.course-search-clear:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+/* Category pills */
+.course-category-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.course-category-pill {
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.55);
+    transition: all 0.18s ease;
+    letter-spacing: 0.01em;
+}
+
+.course-category-pill:hover {
+    border-color: rgba(164, 53, 240, 0.5);
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(164, 53, 240, 0.08);
+}
+
+.course-category-pill.active {
+    background: linear-gradient(135deg, #7c3aed, #a435f0);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(164, 53, 240, 0.35);
+}
+
+/* Results count */
+.course-results-count {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.4);
+    margin: -16px 0 20px;
+    font-weight: 500;
+}
+
+/* Empty state */
+.course-empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 64px 20px;
+    text-align: center;
+}
+
+.course-empty-icon {
+    font-size: 40px;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.course-empty-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.course-empty-sub {
+    margin: 0;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.course-empty-reset {
+    margin-top: 8px;
+    padding: 9px 22px;
+    background: rgba(164, 53, 240, 0.15);
+    border: 1px solid rgba(164, 53, 240, 0.35);
+    border-radius: 8px;
+    color: #c084fc;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.course-empty-reset:hover {
+    background: rgba(164, 53, 240, 0.25);
+}
+
+/* =========================================
    Responsive — Tablet (≤1024px)
    ========================================= */
 @media (max-width: 1024px) {

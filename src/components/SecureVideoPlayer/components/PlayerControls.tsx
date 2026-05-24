@@ -1,63 +1,61 @@
-import React, { useRef, useState } from "react";
+/**
+ * PlayerControls.tsx  — Orchestrator (thin coordinator)
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Assembles TimelineBar, VolumeControl, SettingsMenu, and ControlTooltip into
+ * the complete control bar. Contains NO business logic itself.
+ *
+ * SOLID:
+ *   - Single Responsibility: layout + wiring only
+ *   - Open/Closed: extend via sub-components, not by modifying this file
+ *   - Liskov Substitution: each sub-component is independently replaceable
+ *   - Interface Segregation: PlayerControlsProps carries only what this
+ *     orchestrator needs to forward — no god-object
+ *   - Dependency Inversion: depends on sub-component abstractions, not their
+ *     internal implementations
+ *
+ * Design patterns:
+ *   - Composite: assembles leaf components into the full bar
+ *   - Facade: exposes one surface to SecureVideoPlayer
+ */
+
+import { useCallback, useMemo } from "react";
 import {
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  Maximize,
-  Minimize,
-  Settings,
+  Play, Pause,
+  Maximize, Minimize,
   RectangleHorizontal,
   PictureInPicture,
 } from "lucide-react";
+
+import { TimelineBar }   from "./TimelineBar";
+import { VolumeControl } from "./VolumeControl";
+import { SettingsMenu }  from "./SettingsMenu";
+import { ControlTooltip } from "./ControlTooltip";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import type { PlayerConfig } from "../config/playerConfig";
+import { PLAYER_DEFAULTS } from "../config/playerConfig";
+
 import "../styles/PlayerControls.css";
 
-interface ControlTooltipProps {
-  label: string;
-  shortcut?: string;
-  children: React.ReactNode;
-  visible?: boolean;
-}
+// ── Props ─────────────────────────────────────────────────────────────────────
 
-function ControlTooltip({
-  label,
-  shortcut,
-  children,
-  visible = true,
-}: ControlTooltipProps) {
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <div
-      className="control-tooltip-wrapper" /* Replaced: style={{ position: "relative", display: "flex", alignItems: "center" }} */
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {children}
-      {hovered && visible && (
-        <div className="control-tooltip-popup">
-          <span>{label}</span>
-          {shortcut && (
-            <span className="control-tooltip-shortcut">{shortcut}</span>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-interface PlayerControlsProps {
+export interface PlayerControlsProps {
+  // State
   playing: boolean;
   currentTime: number;
   duration: number;
-  buffered: number; // 0 to 1
+  buffered: number;
   volume: number;
   muted: boolean;
   isFullscreen: boolean;
   isTheater: boolean;
   quality: string;
   qualities: string[];
+  playbackRate: number;
+  loading: boolean;
+  isPiP: boolean;
   visible: boolean;
+  autoPlayNext?: boolean;
+  // Actions
   onPlayPause: () => void;
   onSeek: (time: number) => void;
   onVolumeChange: (volume: number) => void;
@@ -65,248 +63,113 @@ interface PlayerControlsProps {
   onToggleFullscreen: () => void;
   onToggleTheater: () => void;
   onSetQuality: (quality: string) => void;
-  playbackRate: number;
   setPlaybackRate: (rate: number) => void;
-  loading: boolean;
-  autoPlayNext?: boolean;
-  onToggleAutoPlayNext?: () => void;
-  isPiP: boolean;
   onTogglePiP: () => void;
+  onToggleAutoPlayNext?: () => void;
+  /** Optional player-level config overrides (shortcuts, step sizes, rates) */
+  config?: PlayerConfig;
 }
 
-export function PlayerControls({
-  playing,
-  currentTime,
-  duration,
-  buffered,
-  volume,
-  muted,
-  isFullscreen,
-  quality,
-  qualities,
-  visible,
-  onPlayPause,
-  onSeek,
-  onVolumeChange,
-  onToggleMute,
-  onToggleFullscreen,
-  onToggleTheater,
-  onSetQuality,
-  playbackRate,
-  setPlaybackRate,
-  loading,
-  autoPlayNext = false,
-  onToggleAutoPlayNext,
-  isPiP,
-  onTogglePiP,
-}: PlayerControlsProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [sliderValue, setSliderValue] = useState(0);
-  const [showQualityMenu, setShowQualityMenu] = useState(false);
+// ── Time formatter (pure utility) ─────────────────────────────────────────────
 
-  // Keyboard Shortcuts
-  React.useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input
-      if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)) {
-        return;
-      }
+function formatTime(t: number): string {
+  const m = Math.floor(t / 60);
+  const s = Math.floor(t % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
-      switch (e.code) {
-        case "Space":
-          e.preventDefault();
-          onPlayPause();
-          break;
-        case "KeyK":
-          onPlayPause();
-          break;
-        case "KeyM":
-          onToggleMute();
-          break;
-        case "KeyF":
-          onToggleFullscreen();
-          break;
-        case "KeyT":
-          onToggleTheater();
-          break;
-        case "KeyP":
-          onTogglePiP();
-          break;
-        case "ArrowLeft":
-          onSeek(Math.max(0, currentTime - 5));
-          break;
-        case "ArrowRight":
-          onSeek(Math.min(duration, currentTime + 5));
-          break;
-        case "ArrowUp":
-          e.preventDefault();
-          onVolumeChange(Math.min(100, volume + 10));
-          break;
-        case "ArrowDown":
-          e.preventDefault();
-          onVolumeChange(Math.max(0, volume - 10));
-          break;
-        default:
-          break;
-      }
-    };
+// ── PiP mini-controls (shown instead of full bar when in PiP mode) ────────────
 
-    window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [
+function PiPControls({
+  playing, visible, onPlayPause, onTogglePiP,
+}: Pick<PlayerControlsProps, "playing" | "visible" | "onPlayPause" | "onTogglePiP">) {
+  return (
+    <div className="player-controls-pip" style={{ opacity: visible ? 1 : 0 }}>
+      <button onClick={onPlayPause} className="pip-button pip-play-pause">
+        {playing ? <Pause size={28} fill="white" /> : <Play size={28} fill="white" />}
+      </button>
+      <button onClick={onTogglePiP} className="pip-button pip-toggle" title="Exit PiP">
+        <PictureInPicture size={28} />
+      </button>
+    </div>
+  );
+}
+
+// ── Main orchestrator ─────────────────────────────────────────────────────────
+
+export function PlayerControls(props: PlayerControlsProps) {
+  const {
+    playing, currentTime, duration, buffered,
+    volume, muted, isFullscreen, isTheater,
+    quality, qualities, playbackRate, loading,
+    isPiP, visible, autoPlayNext,
+    onPlayPause, onSeek, onVolumeChange, onToggleMute,
+    onToggleFullscreen, onToggleTheater, onSetQuality,
+    setPlaybackRate, onTogglePiP, onToggleAutoPlayNext,
+    config,
+  } = props;
+
+  const seekStep   = config?.seekStepS  ?? PLAYER_DEFAULTS.SEEK_STEP_S;
+  const volumeStep = config?.volumeStep ?? PLAYER_DEFAULTS.VOLUME_STEP;
+
+  // Stable action callbacks forwarded to the keyboard hook
+  const actions = useMemo(() => ({
     onPlayPause,
-    onToggleMute,
-    onToggleFullscreen,
-    onToggleTheater,
-    onSeek,
-    onVolumeChange,
-    currentTime,
-    duration,
-    volume,
-    onTogglePiP,
+    onMute:         onToggleMute,
+    onFullscreen:   onToggleFullscreen,
+    onTheater:      onToggleTheater,
+    onPiP:          onTogglePiP,
+    onSeekBackward: () => onSeek(Math.max(0, currentTime - seekStep)),
+    onSeekForward:  () => onSeek(Math.min(duration, currentTime + seekStep)),
+    onVolumeUp:     () => onVolumeChange(Math.min(100, volume + volumeStep)),
+    onVolumeDown:   () => onVolumeChange(Math.max(0, volume - volumeStep)),
+  }), [
+    onPlayPause, onToggleMute, onToggleFullscreen, onToggleTheater, onTogglePiP,
+    onSeek, currentTime, seekStep, duration, onVolumeChange, volume, volumeStep,
   ]);
 
-  // Tooltip state
-  const [hoverTime, setHoverTime] = useState<number | null>(null);
-  const [hoverPos, setHoverPos] = useState<number | null>(null);
-  const timelineRef = useRef<HTMLDivElement>(null);
+  useKeyboardShortcuts({
+    actions,
+    shortcuts: config?.keyboardShortcuts,
+  });
 
-  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = Number(e.target.value);
-    setSliderValue(newValue);
-    onSeek(newValue);
-  };
+  const handleSetPlaybackRate = useCallback(
+    (rate: number) => setPlaybackRate(rate),
+    [setPlaybackRate],
+  );
 
-  const handleSeekMouseDown = () => {
-    setSliderValue(currentTime);
-    setIsDragging(true);
-  };
-  const handleSeekMouseUp = () => setIsDragging(false);
-
-  const handleTimelineMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!timelineRef.current) return;
-    const rect = timelineRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = Math.max(0, Math.min(1, x / rect.width));
-    setHoverTime(percentage * duration);
-    setHoverPos(x);
-  };
-
-  const handleTimelineMouseLeave = () => {
-    setHoverTime(null);
-    setHoverPos(null);
-  };
-
-  const formatTime = (t: number) => {
-    const m = Math.floor(t / 60), s = Math.floor(t % 60);
-    return `${m}:${s.toString().padStart(2, "0")}`;
-  };
-
-  const getQualityLabel = (q: string) => {
-    const QUALITY_LABELS: Record<string, string> = {
-      hd2160: "4K",
-      hd1440: "1440p",
-      hd1080: "1080p",
-      hd720: "720p",
-      large: "480p",
-      medium: "360p",
-      small: "240p",
-      tiny: "144p",
-      auto: "Auto",
-    };
-    return QUALITY_LABELS[q] ?? q;
-  };
-
-  const [isVolumeHovered, setIsVolumeHovered] = useState(false);
-
-  const currentValue = isDragging ? sliderValue : currentTime;
-  const seekProgress = duration > 0 ? (currentValue / duration) * 100 : 0;
-  const bufferedPercent = buffered * 100;
-
+  // ── PiP mode: minimal controls only ────────────────────────────────────────
   if (isPiP) {
     return (
-      <div className="player-controls-pip" style={{ opacity: visible ? 1 : 0 }}>
-        <button onClick={onPlayPause} className="pip-button pip-play-pause">
-          {playing ? (
-            <Pause size={28} fill="white" />
-          ) : (
-            <Play size={28} fill="white" />
-          )}
-        </button>
-
-        <button
-          onClick={onTogglePiP}
-          className="pip-button pip-toggle"
-          title="Exit Picture in Picture"
-        >
-          <PictureInPicture size={28} />
-        </button>
-      </div>
+      <PiPControls
+        playing={playing}
+        visible={visible}
+        onPlayPause={onPlayPause}
+        onTogglePiP={onTogglePiP}
+      />
     );
   }
 
+  // ── Full control bar ────────────────────────────────────────────────────────
   return (
     <div
       className="player-controls-container"
-      style={{
-        opacity: visible ? 1 : 0,
-        pointerEvents: visible ? "auto" : "none",
-      }}
+      style={{ opacity: visible ? 1 : 0, pointerEvents: visible ? "auto" : "none" }}
     >
-      {/* Timeline Container */}
-      <div
-        ref={timelineRef}
-        className="timeline-container"
-        onMouseMove={handleTimelineMouseMove}
-        onMouseLeave={handleTimelineMouseLeave}
-      >
-        {/* Tooltip */}
-        {hoverTime !== null && hoverPos !== null && (
-          <div className="timeline-tooltip" style={{ left: hoverPos }}>
-            {formatTime(hoverTime)}
-          </div>
-        )}
+      {/* Timeline */}
+      <TimelineBar
+        currentTime={currentTime}
+        duration={duration}
+        buffered={buffered}
+        onSeek={onSeek}
+      />
 
-        {/* Track Base */}
-        <div className="timeline-track-base" />
-
-        {/* Buffered Bar */}
-        <div
-          className="timeline-buffered"
-          style={{ width: `${bufferedPercent}%` }}
-        />
-
-        {/* Progress Bar */}
-        <div
-          className="timeline-progress"
-          style={{ width: `${seekProgress}%` }}
-        />
-
-        {/* Playhead */}
-        <div
-          className="timeline-playhead"
-          style={{ left: `${seekProgress}%` }}
-        />
-
-        {/* Click/Drag Area */}
-        <input
-          type="range"
-          min={0}
-          max={duration || 100}
-          step={0.1}
-          value={currentValue}
-          onChange={handleSeekChange}
-          onMouseDown={handleSeekMouseDown}
-          onMouseUp={handleSeekMouseUp}
-          className="timeline-input"
-        />
-      </div>
-
-      {/* Controls Row */}
+      {/* Controls row */}
       <div className="controls-row">
-        {/* LEFT GROUP */}
+
+        {/* ── Left group ───────────────────────────────────────────────────── */}
         <div className="controls-group">
-          {/* Play/Pause Pill */}
+          {/* Play / Pause */}
           <div className="control-pill control-pill-compact">
             <ControlTooltip label={playing ? "Pause" : "Play"} shortcut="Space">
               <button
@@ -314,11 +177,10 @@ export function PlayerControls({
                 className="play-button"
                 aria-label={playing ? "Pause" : "Play"}
               >
-                {playing ? (
-                  <Pause size={18} fill="white" />
-                ) : (
-                  <Play size={18} fill="white" />
-                )}
+                {playing
+                  ? <Pause size={18} fill="white" />
+                  : <Play  size={18} fill="white" />
+                }
                 {loading && (
                   <div className="loading-spinner-container">
                     <div className="loading-spinner" />
@@ -328,65 +190,30 @@ export function PlayerControls({
             </ControlTooltip>
           </div>
 
-          {/* Volume Pill with Hover Expand */}
-          <div
-            className={`control-pill volume-container ${isVolumeHovered ? "expanded" : ""
-              }`}
-            onMouseEnter={() => setIsVolumeHovered(true)}
-            onMouseLeave={() => setIsVolumeHovered(false)}
-          >
-            <ControlTooltip
-              label={muted || volume === 0 ? "Unmute" : "Mute"}
-              shortcut="M"
-            >
-              <button
-                onClick={onToggleMute}
-                className="play-button"
-                aria-label={muted ? "Unmute" : "Mute"}
-              >
-                {muted || volume === 0 ? (
-                  <VolumeX size={18} />
-                ) : (
-                  <Volume2 size={18} />
-                )}
-              </button>
-            </ControlTooltip>
-            <div
-              className="volume-slider-wrapper"
-              style={{ width: isVolumeHovered ? "60px" : "0px" }}
-            >
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={muted ? 0 : volume}
-                onChange={(e) => onVolumeChange(Number(e.target.value))}
-                className="volume-slider"
-                style={{
-                  background: `linear-gradient(to right, #fff ${muted ? 0 : volume
-                    }%, rgba(255,255,255,0.3) ${muted ? 0 : volume}%)`,
-                }}
-              />
-            </div>
-          </div>
+          {/* Volume */}
+          <VolumeControl
+            volume={volume}
+            muted={muted}
+            onVolumeChange={onVolumeChange}
+            onToggleMute={onToggleMute}
+          />
 
-          {/* Time Pill */}
+          {/* Time display */}
           <div className="control-pill time-display">
             {formatTime(currentTime)} / {formatTime(duration)}
           </div>
         </div>
 
-        {/* RIGHT GROUP */}
+        {/* ── Right group ──────────────────────────────────────────────────── */}
         <div className="controls-group">
           <div className="control-pill control-pill-standard">
-            {/* Auto Play Next Toggle */}
+            {/* Auto-play next toggle */}
             {onToggleAutoPlayNext && (
               <div className="auto-play-toggle-container">
                 <ControlTooltip label="Auto-play Next">
                   <button
                     onClick={onToggleAutoPlayNext}
-                    className={`auto-play-toggle-btn ${autoPlayNext ? "active" : ""
-                      }`}
+                    className={`auto-play-toggle-btn ${autoPlayNext ? "active" : ""}`}
                   >
                     <div className="auto-play-toggle-thumb" />
                   </button>
@@ -394,60 +221,20 @@ export function PlayerControls({
               </div>
             )}
 
-            {/* Quality Settings */}
-            <div className="relative-container">
-              <ControlTooltip label="Settings">
-                <button
-                  className="settings-btn"
-                  onClick={() => setShowQualityMenu(!showQualityMenu)}
-                >
-                  <div className="relative-container">
-                    <Settings size={18} />
-                    <div className="quality-badge">HD</div>
-                  </div>
-                </button>
-              </ControlTooltip>
-
-              {showQualityMenu && (
-                <div className="settings-menu">
-                  <div className="settings-divider" />
-
-                  <div className="settings-label">Quality</div>
-                  {qualities.map((q) => (
-                    <button
-                      key={q}
-                      onClick={() => {
-                        onSetQuality(q);
-                        setShowQualityMenu(false);
-                      }}
-                      className={`settings-option ${quality === q ? "active" : "inactive"
-                        }`}
-                    >
-                      {getQualityLabel(q)}
-                    </button>
-                  ))}
-                  <div className="settings-divider" />
-                  <div className="settings-label">Speed</div>
-                  {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
-                    <button
-                      key={rate}
-                      onClick={() => {
-                        setPlaybackRate(rate);
-                        setShowQualityMenu(false);
-                      }}
-                      className={`settings-option ${playbackRate === rate ? "active" : "inactive"
-                        }`}
-                    >
-                      {rate === 1 ? "Normal" : `${rate}x`}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Settings (quality + speed) */}
+            <SettingsMenu
+              quality={quality}
+              qualities={qualities}
+              playbackRate={playbackRate}
+              playbackRates={config?.playbackRates}
+              onSetQuality={onSetQuality}
+              onSetPlaybackRate={handleSetPlaybackRate}
+            />
           </div>
 
           <div className="control-pill control-pill-minimal">
-            <ControlTooltip label="Theater Mode" shortcut="T">
+            {/* Theater mode */}
+            <ControlTooltip label={isTheater ? "Exit Theater" : "Theater Mode"} shortcut="T">
               <button
                 onClick={onToggleTheater}
                 className="play-button"
@@ -457,6 +244,7 @@ export function PlayerControls({
               </button>
             </ControlTooltip>
 
+            {/* PiP */}
             <ControlTooltip label="Picture in Picture" shortcut="P">
               <button
                 onClick={onTogglePiP}
@@ -468,6 +256,7 @@ export function PlayerControls({
               </button>
             </ControlTooltip>
 
+            {/* Fullscreen */}
             <ControlTooltip
               label={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
               shortcut="F"

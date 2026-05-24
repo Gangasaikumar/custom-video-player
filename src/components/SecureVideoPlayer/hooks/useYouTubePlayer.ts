@@ -1,12 +1,46 @@
+/**
+ * useYouTubePlayer.ts
+ * ─────────────────────────────────────────────────────────────────────────────
+ * YouTube IFrame API player hook.
+ *
+ * Refactored to:
+ *   - Use IPlayerStorage (no direct localStorage calls)
+ *   - Use usePlayerPersistence for shared volume/position logic
+ *   - Use useFullscreen for shared fullscreen + orientation lock
+ *   - Remove all magic numbers (replaced with config constants)
+ *
+ * SOLID:
+ *   - Single Responsibility: YT-specific init + state sync only
+ *   - Dependency Inversion: depends on IPlayerStorage interface
+ *   - Open/Closed: pass a different storage adapter without touching this file
+ */
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import "../types/youtube-api.d.ts";
-import { loadYouTubeAPI } from "../utils/useYouTubeAPI";
+import { loadYouTubeAPI }      from "../utils/useYouTubeAPI";
 import type { VideoPlayerAPI } from "../types/player.types";
+import type { IPlayerStorage } from "../utils/playerStorage";
+import { defaultPlayerStorage } from "../utils/playerStorage";
+import {
+  PLAYER_DEFAULTS,
+  PLAYER_TIMING,
+} from "../config/playerConfig";
+import {
+  readPersistedSettings,
+  useSettingsPersistence,
+  usePositionPersistence,
+  readResumePosition,
+} from "./usePlayerPersistence";
+import { useFullscreen } from "./useFullscreen";
 
 interface UseYouTubePlayerProps {
   videoId: string;
   autoplay?: boolean;
   onEnded?: () => void;
+  /** Inject a custom storage adapter (default: localStorage) */
+  storage?: IPlayerStorage;
+  /** Position save interval override in ms */
+  positionSaveMs?: number;
 }
 
 interface ExtendedYTPlayer extends YT.Player {
@@ -21,81 +55,68 @@ export function useYouTubePlayer({
   videoId,
   autoplay = false,
   onEnded,
+  storage = defaultPlayerStorage,
+  positionSaveMs = PLAYER_TIMING.POSITION_SAVE_MS,
 }: UseYouTubePlayerProps): VideoPlayerAPI {
   const containerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<ExtendedYTPlayer | null>(null);
-  const [ready, setReady] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [buffered, setBuffered] = useState(0);
-  const [volume, setVolume] = useState(() => {
-    const saved = localStorage.getItem("player-volume");
-    return saved ? parseInt(saved, 10) : 100;
-  });
-  const [muted, setMuted] = useState(() => {
-    const saved = localStorage.getItem("player-muted");
-    return saved === "true";
-  });
-  const [playbackRate, setPlaybackRateState] = useState(() => {
-    const saved = localStorage.getItem("player-speed");
-    return saved ? parseFloat(saved) : 1;
-  });
-  const [loading, setLoading] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isPiP, setIsPiP] = useState(false);
-  const isSeeking = useRef(false);
-  const [quality, setQuality] = useState<string>("auto");
-  const [qualities, setQualities] = useState<string[]>([]);
+  const playerRef    = useRef<ExtendedYTPlayer | null>(null);
+  const videoRef     = useRef<HTMLDivElement>(null);
+  const onEndedRef   = useRef(onEnded);
+  const isSeeking    = useRef(false);
 
-  // Create a ref for the video element placeholder
-  const videoRef = useRef<HTMLDivElement>(null);
-  const onEndedRef = useRef(onEnded);
+  useEffect(() => { onEndedRef.current = onEnded; }, [onEnded]);
 
+  // ── Read persisted initial values ──────────────────────────────────────────
+  const persisted = readPersistedSettings(storage);
+
+  const [ready,          setReady]          = useState(false);
+  const [playing,        setPlaying]        = useState(false);
+  const [currentTime,    setCurrentTime]    = useState(0);
+  const [duration,       setDuration]       = useState(0);
+  const [buffered,       setBuffered]       = useState(0);
+  const [volume,         setVolume]         = useState(persisted.volume);
+  const [muted,          setMuted]          = useState(persisted.muted);
+  const [playbackRate,   setPlaybackRateState] = useState(persisted.playbackRate);
+  const [loading,        setLoading]        = useState(true);
+  const [isPiP,          setIsPiP]          = useState(false);
+  const [quality,        setQuality]        = useState<string>("auto");
+  const [qualities,      setQualities]      = useState<string[]>([]);
+
+  // ── Fullscreen (shared hook, no duplication) ───────────────────────────────
+  const { isFullscreen, toggleFullscreen } = useFullscreen({ containerRef });
+
+  // ── Persist settings on change ─────────────────────────────────────────────
+  useSettingsPersistence({ volume, muted, playbackRate }, storage);
+
+  // ── Resume position ────────────────────────────────────────────────────────
   useEffect(() => {
-    onEndedRef.current = onEnded;
-  }, [onEnded]);
-
-  // Save settings to localStorage
-  useEffect(() => {
-    localStorage.setItem("player-volume", volume.toString());
-    localStorage.setItem("player-muted", muted.toString());
-    localStorage.setItem("player-speed", playbackRate.toString());
-  }, [volume, muted, playbackRate]);
-
-  // Position persistence
-  useEffect(() => {
-    if (ready && videoId) {
-      const savedPos = localStorage.getItem(`player-pos-${videoId}`);
-      if (savedPos) {
-        const pos = parseFloat(savedPos);
-        if (pos < duration - 2) {
-          playerRef.current?.seekTo(pos, true);
-        }
-      }
+    if (ready && videoId && duration > 0) {
+      const pos = readResumePosition(videoId, duration, storage);
+      if (pos !== null) playerRef.current?.seekTo(pos, true);
     }
-  }, [ready, videoId, duration]);
+  }, [ready, videoId, duration, storage]);
 
-  useEffect(() => {
-    if (ready && playing && !isSeeking.current) {
-      const interval = setInterval(() => {
-        localStorage.setItem(`player-pos-${videoId}`, currentTime.toString());
-      }, 2000);
-      return () => clearInterval(interval);
-    }
-  }, [ready, playing, videoId, currentTime]);
+  // ── Auto-save position while playing ──────────────────────────────────────
+  usePositionPersistence({
+    mediaId: videoId,
+    currentTime,
+    duration,
+    ready,
+    playing,
+    saveIntervalMs: positionSaveMs,
+    storage,
+  });
 
-  // Initialize Player
+  // ── Initialize YouTube player ──────────────────────────────────────────────
   useEffect(() => {
     let player: ExtendedYTPlayer | undefined;
 
     const initPlayer = async () => {
       if (!videoRef.current) return;
       setLoading(true);
-
       await loadYouTubeAPI();
-
       if (!videoRef.current) return;
+
       videoRef.current.innerHTML = '<div id="yt-player-instance"></div>';
 
       player = new window.YT.Player("yt-player-instance", {
@@ -115,36 +136,29 @@ export function useYouTubePlayer({
           onReady: (event: YT.PlayerEvent) => {
             const p = event.target as ExtendedYTPlayer;
             playerRef.current = p;
-
             setReady(true);
             setLoading(false);
             setDuration(p.getDuration());
-            const availableLevels = p.getAvailableQualityLevels();
-            if (Array.isArray(availableLevels)) {
-              setQualities(availableLevels);
-            }
+            const levels = p.getAvailableQualityLevels();
+            if (Array.isArray(levels)) setQualities(levels);
             setQuality(p.getPlaybackQuality());
           },
           onStateChange: (event: YT.OnStateChangeEvent) => {
             setPlaying(event.data === window.YT.PlayerState.PLAYING);
             setLoading(event.data === window.YT.PlayerState.BUFFERING);
-
             if (event.data === window.YT.PlayerState.PLAYING) {
               setDuration(event.target.getDuration());
               setQualities(event.target.getAvailableQualityLevels());
             }
-            if (
-              event.data === window.YT.PlayerState.ENDED &&
-              onEndedRef.current
-            ) {
-              onEndedRef.current();
+            if (event.data === window.YT.PlayerState.ENDED) {
+              onEndedRef.current?.();
             }
           },
-          onPlaybackQualityChange: (event: YT.OnPlaybackQualityChangeEvent) => {
-            setQuality(event.data);
+          onPlaybackQualityChange: (e: YT.OnPlaybackQualityChangeEvent) => {
+            setQuality(e.data);
           },
-          onPlaybackRateChange: (event: YT.OnPlaybackRateChangeEvent) => {
-            setPlaybackRateState(event.data);
+          onPlaybackRateChange: (e: YT.OnPlaybackRateChangeEvent) => {
+            setPlaybackRateState(e.data);
           },
         },
       }) as ExtendedYTPlayer;
@@ -153,130 +167,66 @@ export function useYouTubePlayer({
     initPlayer();
 
     return () => {
-      if (player) {
-        try {
-          player.destroy();
-        } catch {
-          /* ignore */
-        }
-      }
+      try { player?.destroy(); } catch { /* ignore */ }
       setReady(false);
       setLoading(true);
     };
-  }, [videoId, autoplay, onEndedRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoId, autoplay]);
 
-  // Sync settings once ready
-  useEffect(() => {
-    if (ready && playerRef.current) {
-      const player = playerRef.current;
-      player.setVolume(volume);
-      if (muted) {
-        player.mute();
-      } else {
-        player.unMute();
-      }
-      player.setPlaybackRate(playbackRate);
-    }
-  }, [ready, volume, muted, playbackRate]);
-
-  // Poll current time
+  // ── Sync settings once player is ready ────────────────────────────────────
   useEffect(() => {
     if (!ready || !playerRef.current) return;
+    playerRef.current.setVolume(volume);
+    if (muted) playerRef.current.mute(); else playerRef.current.unMute();
+    playerRef.current.setPlaybackRate(playbackRate);
+  }, [ready, volume, muted, playbackRate]);
 
+  // ── Poll current time + buffer ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!ready || !playerRef.current) return;
     const id = setInterval(() => {
       try {
-        if (
-          !isSeeking.current &&
-          playerRef.current &&
-          typeof playerRef.current.getCurrentTime === "function"
-        ) {
-          const time = playerRef.current.getCurrentTime();
-          if (!isNaN(time)) {
-            setCurrentTime(time);
-          }
-
-          if (typeof playerRef.current.getVideoLoadedFraction === "function") {
-            setBuffered(playerRef.current.getVideoLoadedFraction());
-          }
+        const p = playerRef.current;
+        if (!p || isSeeking.current) return;
+        if (typeof p.getCurrentTime === "function") {
+          const t = p.getCurrentTime();
+          if (!isNaN(t)) setCurrentTime(t);
         }
-      } catch {
-        // ignore
-      }
-    }, 500);
-
+        if (typeof p.getVideoLoadedFraction === "function") {
+          setBuffered(p.getVideoLoadedFraction());
+        }
+      } catch { /* ignore */ }
+    }, PLAYER_TIMING.YT_POLL_MS);
     return () => clearInterval(id);
   }, [ready]);
 
-  // Fullscreen listener
-  useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", handler);
-    return () => document.removeEventListener("fullscreenchange", handler);
-  }, []);
+  // ── Controls ───────────────────────────────────────────────────────────────
 
-  const play = useCallback(() => {
-    playerRef.current?.playVideo();
-  }, []);
-
-  const pause = useCallback(() => {
-    playerRef.current?.pauseVideo();
-  }, []);
+  const play = useCallback(() => { playerRef.current?.playVideo(); }, []);
+  const pause = useCallback(() => { playerRef.current?.pauseVideo(); }, []);
 
   const togglePlay = useCallback(() => {
-    if (playing) {
-      pause();
-    } else {
-      play();
-    }
+    playing ? pause() : play();
   }, [playing, play, pause]);
 
   const seek = useCallback((time: number) => {
     isSeeking.current = true;
     setCurrentTime(time);
     playerRef.current?.seekTo(time, true);
-
-    setTimeout(() => {
-      isSeeking.current = false;
-    }, 1000);
+    setTimeout(() => { isSeeking.current = false; }, PLAYER_TIMING.SEEK_DEBOUNCE_MS);
   }, []);
 
   const setPlayerVolume = useCallback((vol: number) => {
     playerRef.current?.setVolume(vol);
     setVolume(vol);
-    if (vol > 0) {
-      playerRef.current?.unMute();
-      setMuted(false);
-    }
+    if (vol > 0) { playerRef.current?.unMute(); setMuted(false); }
   }, []);
 
   const toggleMute = useCallback(() => {
-    if (muted) {
-      playerRef.current?.unMute();
-      setMuted(false);
-    } else {
-      playerRef.current?.mute();
-      setMuted(true);
-    }
+    if (muted) { playerRef.current?.unMute(); setMuted(false); }
+    else        { playerRef.current?.mute();   setMuted(true);  }
   }, [muted]);
-
-  const toggleFullscreen = useCallback(async () => {
-    try {
-      if (!document.fullscreenElement) {
-        await containerRef.current?.requestFullscreen();
-        if (screen.orientation && "lock" in screen.orientation) {
-          // @ts-expect-error - lock type might be unknown in some TS versions
-          await screen.orientation.lock("landscape").catch(() => {});
-        }
-      } else {
-        await document.exitFullscreen();
-        if (screen.orientation && "unlock" in screen.orientation) {
-          screen.orientation.unlock();
-        }
-      }
-    } catch (err) {
-      console.error("Fullscreen error:", err);
-    }
-  }, []);
 
   const handleSetQuality = useCallback((q: string) => {
     playerRef.current?.setPlaybackQuality(q as YT.SuggestedVideoQuality);
@@ -288,33 +238,18 @@ export function useYouTubePlayer({
     setPlaybackRateState(rate);
   }, []);
 
-  const togglePiP = useCallback(() => {
-    setIsPiP((prev) => !prev);
-  }, []);
+  const togglePiP = useCallback(() => setIsPiP((p) => !p), []);
 
+  // ── Public API ─────────────────────────────────────────────────────────────
   return {
     ref: containerRef,
     videoRef,
-    ready,
-    playing,
-    currentTime,
-    duration,
-    buffered,
-    volume,
-    muted,
-    isFullscreen,
-    quality,
-    qualities,
-    playbackRate,
-    loading,
-    isPiP,
-    play,
-    pause,
-    togglePlay,
-    seek,
+    ready, playing, currentTime, duration, buffered,
+    volume, muted, isFullscreen, quality, qualities,
+    playbackRate, loading, isPiP,
+    play, pause, togglePlay, seek,
     setVolume: setPlayerVolume,
-    toggleMute,
-    toggleFullscreen,
+    toggleMute, toggleFullscreen,
     setQuality: handleSetQuality,
     setPlaybackRate: handleSetPlaybackRate,
     togglePiP,

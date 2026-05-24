@@ -12,12 +12,11 @@ import { IframeShield } from "./components/IframeShield";
 import { PlayerControls } from "./components/PlayerControls";
 import { PlayerLoadingOverlay } from "./components/PlayerLoadingOverlay";
 import { PlayerCountdownOverlay } from "./components/PlayerCountdownOverlay";
+import { PlayerErrorBoundary } from "./components/PlayerErrorBoundary";
 import type {
   VideoPlayerAPI,
   SecureVideoPlayerProps,
 } from "./types/player.types";
-
-// Removed local interface Props
 
 const getYouTubeId = (url: string) => {
   if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
@@ -30,7 +29,16 @@ const getYouTubeId = (url: string) => {
   return null;
 };
 
+/** Public entry point — wraps itself in an Error Boundary automatically. */
 export function SecureVideoPlayer(props: SecureVideoPlayerProps) {
+  return (
+    <PlayerErrorBoundary>
+      <SecureVideoPlayerInner {...props} />
+    </PlayerErrorBoundary>
+  );
+}
+
+function SecureVideoPlayerInner(props: SecureVideoPlayerProps) {
   const youtubeId = getYouTubeId(props.src);
 
   // Block right-click + DevTools keyboard shortcuts

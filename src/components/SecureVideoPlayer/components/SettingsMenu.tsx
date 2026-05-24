@@ -17,6 +17,7 @@ import { getQualityLabel, DEFAULT_PLAYBACK_RATES } from "../config/playerConfig"
 
 interface SettingsMenuProps {
   quality: string;
+  /** Pass an empty array to hide the quality section (e.g. HTML5 video) */
   qualities: string[];
   playbackRate: number;
   playbackRates?: number[];
@@ -44,7 +45,10 @@ export function SettingsMenu({
         >
           <div className="relative-container">
             <Settings size={18} />
-            <div className="quality-badge">HD</div>
+            {/* Show HD badge only when real quality levels are available */}
+            {qualities.length > 1 && (
+              <div className="quality-badge">HD</div>
+            )}
           </div>
         </button>
       </ControlTooltip>

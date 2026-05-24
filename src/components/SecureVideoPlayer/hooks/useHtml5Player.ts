@@ -93,7 +93,8 @@ export function useHtml5Player({
       setDuration(video.duration);
       setReady(true);
       setLoading(false);
-      setQualities(["auto"]);
+      // HTML5 <video> has no programmatic quality switching — leave qualities
+      // empty so the Settings menu shows Speed only (no misleading Quality section)
       if (autoplay) video.play().catch((e) => console.warn("[Html5Player] Autoplay blocked:", e));
 
       // Resume saved position

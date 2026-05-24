@@ -25,9 +25,10 @@
 export { SecureVideoPlayer } from "./SecureVideoPlayer";
 
 // ── Security components & hooks ───────────────────────────────────────────────
-export { DevToolsGuard }      from "./components/DevToolsGuard";
-export { useDevToolsDetect }  from "./hooks/useDevToolsDetection";
-export { useSecurity }        from "./hooks/useSecurity";
+export { DevToolsGuard }        from "./components/DevToolsGuard";
+export { PlayerErrorBoundary }  from "./components/PlayerErrorBoundary";
+export { useDevToolsDetect }    from "./hooks/useDevToolsDetection";
+export { useSecurity }          from "./hooks/useSecurity";
 
 // ── Public types ──────────────────────────────────────────────────────────────
 export type {

@@ -147,46 +147,68 @@ Built with React 19 · TypeScript · Vite 7 · Framer Motion
 ```
 src/
 ├── components/
-│   ├── SecureVideoPlayer/          # Core secure player system
-│   │   ├── SecureVideoPlayer.tsx   # Root — detects YouTube vs HTML5
+│   ├── SecureVideoPlayer/               # ♻️ Self-contained, drop-in player system
+│   │   ├── index.ts                     # Public barrel export — import only from here
+│   │   ├── SecureVideoPlayer.tsx        # Root — detects YouTube vs HTML5, mounts security
+│   │   ├── config/
+│   │   │   └── playerConfig.ts          # All constants, PlayerConfig interface, defaults
 │   │   ├── components/
-│   │   │   ├── PlayerControls.tsx  # Full control bar (timeline, volume, etc.)
-│   │   │   ├── MovingWatermark.tsx # Animated position-shifting watermark
-│   │   │   ├── TiledWatermark.tsx  # Full-canvas tiled overlay
-│   │   │   ├── IframeShield.tsx    # Invisible iframe interaction blocker
-│   │   │   ├── PlayerLoadingOverlay.tsx
-│   │   │   └── PlayerCountdownOverlay.tsx  # Auto-next countdown
+│   │   │   ├── PlayerControls.tsx       # Composite control bar (Facade pattern)
+│   │   │   ├── TimelineBar.tsx          # Scrubber — drag, hover tooltip, buffered bar
+│   │   │   ├── VolumeControl.tsx        # Hover-expand volume slider + mute toggle
+│   │   │   ├── SettingsMenu.tsx         # Quality + playback-rate picker
+│   │   │   ├── ControlTooltip.tsx       # Reusable tooltip wrapper for any button
+│   │   │   ├── DevToolsGuard.tsx        # Full-page warning banner (uses useDevToolsDetect)
+│   │   │   ├── MovingWatermark.tsx      # Animated position-shifting watermark
+│   │   │   ├── TiledWatermark.tsx       # Full-canvas tiled overlay
+│   │   │   ├── IframeShield.tsx         # Transparent iframe interaction blocker
+│   │   │   ├── PlayerLoadingOverlay.tsx # Spinner shown while buffering
+│   │   │   └── PlayerCountdownOverlay.tsx # Auto-next countdown UI
 │   │   ├── hooks/
-│   │   │   ├── useYouTubePlayer.ts     # YouTube IFrame API integration
-│   │   │   ├── useHtml5Player.ts       # HTML5 <video> integration
-│   │   │   ├── useSecurity.ts          # Right-click + F12 blocking
-│   │   │   ├── useDevToolsDetection.ts # DevTools open detection
-│   │   │   ├── useControlsVisibility.ts # Auto-hide controls
-│   │   │   ├── usePlayerMilestones.ts  # 25/50/75/100% events
-│   │   │   ├── usePlayerCountdown.ts   # Auto-next countdown timer
-│   │   │   ├── usePiPResize.ts         # Draggable PiP resize
-│   │   │   ├── useWatermarkPosition.ts # Watermark movement logic
-│   │   │   └── useYouTubeAPI.ts        # YT API script loader
-│   │   └── types/
-│   │       └── player.types.ts         # VideoPlayerAPI interface
-│   ├── HomeView.tsx          # Mode selection landing screen
-│   ├── PlaylistPage.tsx      # Streaming mode layout
-│   ├── PlaylistSidebar.tsx   # Video list sidebar
-│   ├── CourseListPage.tsx    # Academy course gallery
-│   ├── CoursePlayerPage.tsx  # Course player with tabs & sidebar
-│   ├── CourseContentSidebar.tsx
-│   ├── PlayerControls.tsx    # (legacy/shared)
-│   └── DevToolsGuard.tsx     # App-level DevTools guard overlay
+│   │   │   ├── useYouTubePlayer.ts      # YouTube IFrame API — full VideoPlayerAPI
+│   │   │   ├── useHtml5Player.ts        # HTML5 <video> — full VideoPlayerAPI
+│   │   │   ├── useFullscreen.ts         # Fullscreen API + orientation lock (shared)
+│   │   │   ├── usePlayerPersistence.ts  # Volume/speed/position save & restore
+│   │   │   ├── useKeyboardShortcuts.ts  # Configurable keyboard shortcut handler
+│   │   │   ├── useSecurity.ts           # Right-click block + DevTools key blocking
+│   │   │   ├── useDevToolsDetection.ts  # Detects DevTools panel open (boolean)
+│   │   │   ├── useControlsVisibility.ts # Auto-hide controls on mouse idle
+│   │   │   ├── usePlayerMilestones.ts   # Fires callbacks at 25/50/75/100%
+│   │   │   ├── usePlayerCountdown.ts    # Auto-next countdown timer
+│   │   │   ├── usePiPResize.ts          # Draggable Picture-in-Picture resize
+│   │   │   ├── useWatermarkPosition.ts  # Periodic watermark position rotation
+│   │   │   └── useYouTubeAPI.ts         # Lazy YouTube IFrame API script loader
+│   │   ├── types/
+│   │   │   ├── player.types.ts          # VideoPlayerState, VideoPlayerControls, VideoPlayerAPI
+│   │   │   └── youtube-api.d.ts         # YT namespace type declarations
+│   │   ├── utils/
+│   │   │   └── playerStorage.ts         # IPlayerStorage + 4 adapters (Strategy pattern)
+│   │   └── styles/
+│   │       ├── SecureVideoPlayer.css
+│   │       ├── PlayerControls.css
+│   │       ├── PlayerOverlays.css
+│   │       ├── MovingWatermark.css
+│   │       ├── TiledWatermark.css
+│   │       ├── IframeShield.css
+│   │       └── DevToolsGuard.css
+│   ├── HomeView.tsx              # Mode-selection landing screen
+│   ├── LoginPage.tsx             # Auth form — redirects to protected route on success
+│   ├── ProtectedRoute.tsx        # HOC — redirects to /login if unauthenticated
+│   ├── PlaylistPage.tsx          # Streaming mode layout
+│   ├── PlaylistSidebar.tsx       # Video list sidebar
+│   ├── CourseListPage.tsx        # Academy course gallery with neon progress
+│   ├── CoursePlayerPage.tsx      # Course player — tabs (Overview, Q&A, Notes…)
+│   └── CourseContentSidebar.tsx  # Lesson list with completion toggle + progress bar
 ├── data/
-│   ├── mockData.ts           # Playlist & course interfaces + data
+│   ├── mockData.ts               # Course & playlist interfaces + mock data
 │   ├── dotnet_core_course.json
 │   ├── sql_realtime_course.json
 │   └── angular_course.json
 ├── hooks/
-│   └── useScrollToTop.ts     # Generic scroll-to-top hook
-├── styles/                   # Page-level CSS modules
+│   └── useScrollToTop.ts         # Generic scroll-to-top for any scroll container
+├── styles/                       # Page-level CSS (one file per page component)
 └── utils/
-    └── authService.ts        # Auth helpers
+    └── authService.ts            # Mock auth — login / logout / getUser
 ```
 
 ---

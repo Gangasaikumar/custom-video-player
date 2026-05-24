@@ -1,0 +1,27 @@
+/* =========================================
+   DevTools Guard — Warning Banner
+   ========================================= */
+
+.devtools-guard-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(90deg, rgba(200, 0, 0, 0.97), rgba(160, 0, 0, 0.97));
+  color: #fff;
+  padding: 14px 20px;
+  text-align: center;
+  z-index: 100000;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+  user-select: none;
+}
+
+.devtools-guard-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}

@@ -1,44 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { MOCK_COURSES } from "../data/mockData";
 import type { Course } from "../data/mockData";
-import { Play, Clock, BookOpen, Home, ArrowUp } from "lucide-react";
+import { Play, Clock, BookOpen, ArrowUp } from "lucide-react";
 import { useScrollToTop } from "../hooks/useScrollToTop";
 import "../styles/CourseListPage.css";
 
-// ... existing helper components ...
 interface CourseListPageProps {
   onSelectCourse: (course: Course) => void;
-  onBack: () => void;
+  onBack?: () => void;
 }
-
-const NavTooltip = ({
-  text,
-  children,
-}: {
-  text: string;
-  children: React.ReactNode;
-}) => {
-  const [show, setShow] = useState(false);
-  return (
-    <div
-      className="nav-tooltip-container"
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
-    >
-      {children}
-      {show && (
-        <div className="nav-tooltip-popup">
-          {text}
-          <div className="nav-tooltip-arrow" />
-        </div>
-      )}
-    </div>
-  );
-};
 
 export function CourseListPage({
   onSelectCourse,
-  onBack,
 }: CourseListPageProps) {
   const [progress, setProgress] = useState<Record<string, number>>({});
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -69,19 +42,6 @@ export function CourseListPage({
         {/* Cinematic Background Glows */}
         <div className="background-glow purple" />
         <div className="background-glow pink" />
-
-        {/* Navigation Pill */}
-        <div className="nav-home-wrapper">
-          <NavTooltip text="Back to Dashboard">
-            <button
-              onClick={onBack}
-              aria-label="Back to Dashboard"
-              className="nav-home-button"
-            >
-              <Home size={20} />
-            </button>
-          </NavTooltip>
-        </div>
 
         <header className="page-header">
           <h1 className="page-title">My Courses</h1>

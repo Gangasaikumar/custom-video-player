@@ -24,6 +24,11 @@
 // ── Main component ────────────────────────────────────────────────────────────
 export { SecureVideoPlayer } from "./SecureVideoPlayer";
 
+// ── Security components & hooks ───────────────────────────────────────────────
+export { DevToolsGuard }      from "./components/DevToolsGuard";
+export { useDevToolsDetect }  from "./hooks/useDevToolsDetection";
+export { useSecurity }        from "./hooks/useSecurity";
+
 // ── Public types ──────────────────────────────────────────────────────────────
 export type {
   SecureVideoPlayerProps,

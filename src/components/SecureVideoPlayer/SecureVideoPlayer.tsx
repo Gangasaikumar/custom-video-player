@@ -6,7 +6,6 @@ import { usePlayerCountdown } from "./hooks/usePlayerCountdown";
 import { useControlsVisibility } from "./hooks/useControlsVisibility";
 import { usePiPResize } from "./hooks/usePiPResize";
 import { useSecurity } from "./hooks/useSecurity";
-import { useDevToolsDetect } from "./hooks/useDevToolsDetection";
 import { MovingWatermark } from "./components/MovingWatermark";
 import { TiledWatermark } from "./components/TiledWatermark";
 import { IframeShield } from "./components/IframeShield";
@@ -34,9 +33,8 @@ const getYouTubeId = (url: string) => {
 export function SecureVideoPlayer(props: SecureVideoPlayerProps) {
   const youtubeId = getYouTubeId(props.src);
 
-  // Enable security features
+  // Block right-click + DevTools keyboard shortcuts
   useSecurity();
-  useDevToolsDetect();
 
   return youtubeId ? (
     <YoutubeSpecificPlayer videoId={youtubeId} {...props} />

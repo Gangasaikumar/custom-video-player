@@ -1,7 +1,7 @@
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { PlaylistPage } from "./components/PlaylistPage";
 import { CoursePlayerPage } from "./components/CoursePlayerPage";
-import { DevToolsGuard } from "./components/DevToolsGuard";
+import { DevToolsGuard } from "./components/SecureVideoPlayer";
 import { HomeView } from "./components/HomeView";
 import { CourseListPage } from "./components/CourseListPage";
 import { LoginPage } from "./components/LoginPage";

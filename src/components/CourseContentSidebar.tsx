@@ -1,11 +1,5 @@
 import type { Course, Video } from "../data/mockData";
-import {
-  CheckCircle2,
-  Circle,
-  ChevronDown,
-  PlayCircle,
-  ChevronRight,
-} from "lucide-react";
+import { CheckCircle2, Circle, PlayCircle, Clock } from "lucide-react";
 import "../styles/CourseContentSidebar.css";
 
 interface CourseContentSidebarProps {
@@ -27,21 +21,36 @@ export function CourseContentSidebar({
   className = "",
   style,
 }: CourseContentSidebarProps) {
+  const doneCount = completedVideos.size;
+  const totalCount = course.videos.length;
+  const progressPct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
+
   return (
     <div className={`sidebar-container ${className}`} style={style}>
-      <div className="sidebar-header">
-        <span className="text-overline">Course Content</span>
-        <span className="text-caption">
-          {completedVideos.size}/{course.videos.length} DONE
-        </span>
-      </div>
 
-      <div className="sidebar-videos-container no-scrollbar">
-        <div className="sidebar-accordion-trigger">
-          <span>CURRICULUM</span>
-          <ChevronDown size={14} />
+      {/* ── Header ─────────────────────────────────────── */}
+      <div className="sidebar-header">
+        <div className="sidebar-header-top">
+          <span className="sidebar-heading">Course Content</span>
+          <span className="sidebar-done-badge">
+            {doneCount}/{totalCount} Done
+          </span>
         </div>
 
+        {/* Progress bar */}
+        <div className="sidebar-progress-track">
+          <div
+            className="sidebar-progress-fill"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+
+        {/* Section label */}
+        <div className="sidebar-section-label">Curriculum</div>
+      </div>
+
+      {/* ── Lesson list ────────────────────────────────── */}
+      <div className="sidebar-videos-container no-scrollbar">
         {course.videos.map((video, index) => {
           const isActive = currentVideo.id === video.id;
           const isCompleted = completedVideos.has(video.id);
@@ -50,37 +59,41 @@ export function CourseContentSidebar({
             <div
               key={video.id}
               onClick={() => onVideoSelect(video)}
-              className={`sidebar-video-item ${isActive ? "active" : ""}`}
+              className={`sidebar-lesson-item ${isActive ? "active" : ""} ${isCompleted ? "completed" : ""}`}
             >
-              <div
-                className="sidebar-check-icon"
+              {/* Left: number badge */}
+              <div className="sidebar-lesson-number">
+                {isCompleted
+                  ? <CheckCircle2 size={16} className="lesson-check-icon done" />
+                  : isActive
+                    ? <PlayCircle size={16} className="lesson-check-icon playing" />
+                    : <span className="lesson-num-text">{index + 1}</span>
+                }
+              </div>
+
+              {/* Center: title + meta */}
+              <div className="sidebar-lesson-body">
+                <p className="sidebar-lesson-title">{video.title}</p>
+                <div className="sidebar-lesson-meta">
+                  <Clock size={11} />
+                  <span>{video.duration}</span>
+                </div>
+              </div>
+
+              {/* Right: completion toggle */}
+              <button
+                className="sidebar-check-btn"
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleCompletion(video.id);
                 }}
+                aria-label={isCompleted ? "Mark incomplete" : "Mark complete"}
               >
-                {isCompleted ? (
-                  <CheckCircle2
-                    size={18}
-                    color="#a435f0"
-                    fill="rgba(164, 53, 240, 0.2)"
-                  />
-                ) : (
-                  <Circle size={18} color="rgba(255,255,255,0.2)" />
-                )}
-              </div>
-
-              <div className="sidebar-video-info">
-                <div className="text-subtitle">
-                  {index + 1}. {video.title}
-                </div>
-                <div className="text-caption sidebar-duration-row">
-                  <PlayCircle size={12} />
-                  {video.duration}
-                </div>
-              </div>
-
-              {isActive && <ChevronRight size={16} color="#a435f0" />}
+                {isCompleted
+                  ? <CheckCircle2 size={18} className="check-done" />
+                  : <Circle size={18} className="check-empty" />
+                }
+              </button>
             </div>
           );
         })}

@@ -4,6 +4,7 @@ import { MOCK_PLAYLIST } from "../data/mockData";
 import type { Video } from "../data/mockData";
 import { Eye, Calendar, UserPlus, ArrowUp } from "lucide-react";
 import { useScrollToTop } from "../hooks/useScrollToTop";
+import { AuthService } from "../utils/authService";
 import "../styles/PlaylistPage.css";
 
 import { PlaylistSidebar } from "./PlaylistSidebar";
@@ -13,6 +14,8 @@ interface PlaylistPageProps {
 }
 
 export function PlaylistPage({ videos = MOCK_PLAYLIST }: PlaylistPageProps) {
+  const currentUser = AuthService.getUser();
+  const userEmail = currentUser?.email ?? "guest@example.com";
   const [currentVideo, setCurrentVideo] = useState<Video | undefined>(
     videos[0]
   );
@@ -69,7 +72,7 @@ export function PlaylistPage({ videos = MOCK_PLAYLIST }: PlaylistPageProps) {
           >
             <SecureVideoPlayer
               src={currentVideo.src}
-              userEmail="user@example.com"
+              userEmail={userEmail}
               isTheaterMode={isTheaterMode}
               onToggleTheater={() => setIsTheaterMode(!isTheaterMode)}
               fullWidth={true}

@@ -344,3 +344,72 @@
 .play-icon-offset {
     margin-left: 4px;
 }
+
+/* =========================================
+   Responsive — Tablet (≤1024px)
+   ========================================= */
+@media (max-width: 1024px) {
+    .course-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 24px;
+    }
+
+    .course-list-scroll-container {
+        padding: 80px 4% 40px;
+    }
+}
+
+/* =========================================
+   Responsive — Mobile (≤768px)
+   ========================================= */
+@media (max-width: 768px) {
+    .course-list-scroll-container {
+        padding: 80px 16px 32px;
+    }
+
+    .page-title {
+        font-size: 28px;
+    }
+
+    .page-subtitle {
+        font-size: 15px;
+    }
+
+    .page-header {
+        margin-bottom: 32px;
+    }
+
+    .course-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .course-title {
+        font-size: 17px;
+    }
+
+    .course-content {
+        padding: 18px;
+    }
+
+    .course-list-scroll-top-btn {
+        bottom: 20px;
+        right: 16px;
+        width: 44px;
+        height: 44px;
+    }
+}
+
+/* =========================================
+   Responsive — Small mobile (≤480px)
+   ========================================= */
+@media (max-width: 480px) {
+    .course-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .play-icon-circle {
+        width: 44px;
+        height: 44px;
+    }
+}

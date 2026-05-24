@@ -133,3 +133,49 @@
     border-radius: 100px 100px 0 0;
     opacity: 0.8;
 }
+
+/* =========================================
+   Responsive
+   ========================================= */
+@media (max-width: 768px) {
+    .home-title {
+        font-size: 32px;
+    }
+
+    .home-subtitle {
+        font-size: 15px;
+    }
+
+    .home-header {
+        margin-bottom: 36px;
+    }
+
+    .selection-cards-container {
+        gap: 18px;
+    }
+
+    .selection-card {
+        width: 100%;
+        max-width: 320px;
+        padding: 28px 22px;
+    }
+}
+
+@media (max-width: 480px) {
+    .home-title {
+        font-size: 26px;
+    }
+
+    .selection-card {
+        padding: 22px 18px;
+    }
+
+    .selection-card-icon-container {
+        padding: 14px;
+        margin-bottom: 16px;
+    }
+
+    .selection-card-title {
+        font-size: 17px;
+    }
+}

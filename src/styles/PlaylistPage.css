@@ -241,3 +241,105 @@
 .scroll-to-top-btn:hover {
     transform: scale(1.1);
 }
+
+/* =========================================
+   Responsive — Tablet (≤1024px)
+   ========================================= */
+@media (max-width: 1024px) {
+    .playlist-page-grid.normal-mode {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow-y: auto;
+    }
+
+    .playlist-main-column {
+        padding: 0 24px 32px;
+    }
+
+    .playlist-sidebar-column {
+        border-left: none;
+        border-top: 1px solid var(--border-glass);
+        padding: 24px 20px;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+}
+
+/* =========================================
+   Responsive — Mobile (≤768px)
+   ========================================= */
+@media (max-width: 768px) {
+    .playlist-page-grid {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+    }
+
+    .playlist-main-column {
+        padding: 0 16px 24px;
+        gap: 16px;
+    }
+
+    .playlist-player-wrapper {
+        border-radius: 10px;
+        margin-bottom: 16px;
+    }
+
+    .playlist-video-title {
+        font-size: 20px;
+        margin-bottom: 12px;
+    }
+
+    .channel-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .channel-info-group {
+        gap: 10px;
+    }
+
+    .channel-avatar-gradient {
+        width: 38px;
+        height: 38px;
+        font-size: 16px;
+        border-radius: 12px;
+    }
+
+    .channel-name {
+        font-size: 14px;
+    }
+
+    .subscribe-btn {
+        margin-left: 0;
+        padding: 7px 16px;
+        font-size: 13px;
+    }
+
+    .premium-info-card {
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    .premium-stats-row {
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 11px;
+    }
+
+    .premium-description {
+        font-size: 14px;
+    }
+
+    .playlist-sidebar-column {
+        padding: 16px;
+        max-height: none;
+    }
+
+    .playlist-info-area.theater-mode {
+        flex-direction: column;
+        padding: 0 16px 24px;
+        gap: 20px;
+    }
+}

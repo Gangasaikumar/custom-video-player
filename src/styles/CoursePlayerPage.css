@@ -175,29 +175,440 @@
 }
 
 @media (max-width: 768px) {
+    .player-page-grid {
+        height: auto;
+        min-height: 100vh;
+    }
+
     .tabs-bar {
         padding: 0 16px;
         font-size: 12px;
         gap: 16px;
         overflow-x: auto;
-        /* Allow horizontal scroll for tabs */
     }
 
     .tab-item {
         padding: 12px 0;
         white-space: nowrap;
+        font-size: 11px;
+    }
+
+    .search-icon-wrapper {
+        display: none;
     }
 
     .video-main-content {
-        padding: 20px;
+        padding: 16px;
     }
 
     .video-title {
-        font-size: 24px;
+        font-size: 20px;
     }
 
     .video-stats-row {
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 10px;
+        font-size: 12px;
     }
+
+    .player-dark-section {
+        padding: 0;
+    }
+
+    .player-container-inner {
+        border-radius: 0;
+    }
+
+    .player-content-wrapper.contained {
+        max-width: 100%;
+        flex-direction: column;
+    }
+
+    .theater-sidebar-container {
+        width: 100% !important;
+    }
+
+    .module-description {
+        font-size: 14px;
+    }
+
+    .description-label {
+        font-size: 15px;
+    }
+}
+
+/* =========================================
+   Responsive — Small mobile (≤480px)
+   ========================================= */
+@media (max-width: 480px) {
+    .tabs-bar {
+        gap: 12px;
+        padding: 0 12px;
+    }
+
+    .tab-item {
+        font-size: 10px;
+    }
+
+    .video-title {
+        font-size: 18px;
+    }
+
+    .video-main-content {
+        padding: 12px;
+    }
+}
+
+/* =========================================
+   Shared Tab Panel
+   ========================================= */
+.tab-content-panel {
+    padding: 8px 0 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.tab-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.tab-panel-subtitle {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin: -12px 0 0;
+}
+
+.tab-panel-subtitle em {
+    color: rgba(255, 255, 255, 0.75);
+    font-style: normal;
+}
+
+/* =========================================
+   Q&A Tab
+   ========================================= */
+.qa-input-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.qa-avatar,
+.qa-item-avatar,
+.review-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #a435f0, #cf2896);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.qa-input-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.qa-textarea,
+.notes-textarea {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 10px 14px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.qa-textarea:focus,
+.notes-textarea:focus {
+    border-color: rgba(164, 53, 240, 0.6);
+}
+
+.qa-submit-btn {
+    align-self: flex-end;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 20px;
+    border: none;
+    background: linear-gradient(135deg, #a435f0, #cf2896);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.qa-submit-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.qa-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.qa-item {
+    display: flex;
+    gap: 12px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+}
+
+.qa-item-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.qa-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.qa-author {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.qa-time {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.qa-question {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.qa-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 2px;
+}
+
+.qa-upvote-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.qa-upvote-btn.active {
+    background: rgba(164, 53, 240, 0.2);
+    border-color: rgba(164, 53, 240, 0.5);
+    color: #a435f0;
+}
+
+.qa-answer-count {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+/* =========================================
+   Notes Tab
+   ========================================= */
+.notes-textarea {
+    min-height: 220px;
+    line-height: 1.7;
+}
+
+.notes-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.notes-save-btn {
+    padding: 8px 22px;
+    border-radius: 20px;
+    border: none;
+    background: linear-gradient(135deg, #a435f0, #cf2896);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.notes-clear-btn {
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.notes-clear-btn:hover {
+    border-color: rgba(255, 80, 80, 0.5);
+    color: rgba(255, 80, 80, 0.8);
+}
+
+/* =========================================
+   Announcements Tab
+   ========================================= */
+.announcements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.announcement-item {
+    padding: 16px 18px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 3px solid #a435f0;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.announcement-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.announcement-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.announcement-date {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.announcement-body {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.announcement-instructor {
+    font-size: 0.78rem;
+    color: rgba(164, 53, 240, 0.8);
+    font-style: italic;
+}
+
+/* =========================================
+   Reviews Tab
+   ========================================= */
+.reviews-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.reviews-avg {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #f39c12;
+    line-height: 1;
+}
+
+.star-rating {
+    display: flex;
+    gap: 2px;
+}
+
+.reviews-count {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.review-item {
+    display: flex;
+    gap: 12px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+}
+
+.review-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.review-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.review-author {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.review-date {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.3);
+    margin-left: auto;
+}
+
+.review-text {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.6;
+    margin: 0;
 }

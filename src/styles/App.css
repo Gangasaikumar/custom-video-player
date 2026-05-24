@@ -60,6 +60,9 @@
     top: 24px;
     left: 24px;
     z-index: 2000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .nav-home-button {
@@ -83,6 +86,12 @@
     border-color: rgba(164, 53, 240, 0.4);
     transform: scale(1.1);
     box-shadow: 0 15px 40px rgba(164, 53, 240, 0.2);
+}
+
+.nav-logout-button:hover {
+    background-color: rgba(255, 80, 80, 0.15) !important;
+    border-color: rgba(255, 80, 80, 0.35) !important;
+    box-shadow: 0 15px 40px rgba(255, 80, 80, 0.15) !important;
 }
 
 @media (max-width: 768px) {
